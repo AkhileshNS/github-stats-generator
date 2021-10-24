@@ -3,6 +3,7 @@ import express from 'express';
 import compression from 'compression';
 import helmet from 'helmet';
 import { getRepoCount, getReposStats } from './graphql/requests';
+import { processData } from './graphql/helpers';
 
 // VARIABLES
 const app = express();
@@ -42,6 +43,25 @@ app.post('/repos/stats/raw', async (req, res) => {
 
     const reposStats = await getReposStats(token, name);
     res.status(200).send({repoCount: reposStats.length, reposStats});
+  } catch (err) {
+    res.send({
+      error: "Error making your request",
+      err
+    })
+  }
+});
+
+app.post('/repos/stats/processed', async (req, res) => {
+  try {
+    const {token, name} = req.body;
+
+    if (!token || !name) {
+      throw new Error("Missing token or name in body");
+    }
+
+    const reposStats = await getReposStats(token, name);
+    const processedReposStats = processData(reposStats);
+    res.status(200).send({...processedReposStats});
   } catch (err) {
     res.send({
       error: "Error making your request",
